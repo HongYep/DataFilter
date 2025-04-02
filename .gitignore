@@ -1,0 +1,8 @@
+.vscode/
+data/
+gemma_3_4b_output/
+gemma_3_4b_sort_results/
+llama_output/
+llama_sort_results/
+wandb/
+safe_test/med_results/
