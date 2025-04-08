@@ -6,3 +6,4 @@ llama_output/
 llama_sort_results/
 wandb/
 safe_test/med_results/
+safe_test/fac_results/

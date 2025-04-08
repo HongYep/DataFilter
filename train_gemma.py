@@ -70,7 +70,7 @@ def alpaca_process_func(example):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_path', type=str, default='gemma_3_4b_sort_results/bi_res_rep_avg100_mean_bottom_1000.json')
-    parser.add_argument('--output_path', type=str, default='gemma_3_4b_output/bi_res_rep_avg100_mean_bottom_1000')
+    parser.add_argument('--output_path', type=str, default='gemma_3_4b_output/bi_res_rep_avg100_updown_mean_bottom_1000')
     args = parser.parse_args()
     train_json_path = args.data_path
     train_ds = Dataset.from_json(train_json_path)
@@ -80,10 +80,10 @@ if __name__ == '__main__':
         task_type=TaskType.CAUSAL_LM,
         inference_mode=False,  # 训练模式
         target_modules=[
-            "q_proj",
-            "k_proj",
-            "v_proj",
-            "o_proj",
+            # "q_proj",
+            # "k_proj",
+            # "v_proj",
+            # "o_proj",
             "gate_proj",
             "up_proj",
             "down_proj"

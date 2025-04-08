@@ -5,7 +5,7 @@ import time
 import numpy as np
 from tqdm import tqdm
 LLAMA_GUARD_API_KEY = "token-pjlab"
-LLAMA_GUARD_URL = "http://10.140.54.61:8612/v1"
+LLAMA_GUARD_URL = "http://10.140.54.15:8612/v1"
 from concurrent.futures import ThreadPoolExecutor
 import threading
 def llama_guard_eval(query, res):
@@ -44,7 +44,7 @@ for root, dirs, files in os.walk('/mnt/petrelfs/luzhenghao/safe_useful/safe_test
     # with open('/mnt/petrelfs/lihao1/vlmmoe/safe_test/MM-processed_questions/total.json','r') as f:
     #     total = json.load(f)
     for file in files:
-        if 'avg100' not in file:
+        if 'fac' not in file:
             continue
         file = os.path.join(root, file)
         with open(file, 'r') as f:
