@@ -2,6 +2,7 @@ from transformers import AutoModelForCausalLM, AutoTokenizer, Gemma3ForCausalLM
 import json
 import pandas as pd
 import torch
+import gc
 from tqdm import tqdm
 import argparse
 from vllm import LLM, SamplingParams
@@ -17,8 +18,12 @@ from vllm.lora.request import LoRARequest
 #     pass
 
 def safe_test_vllm_peft_models(bench='direct'):
+    # peft_models = {
+    #     'llama_bi_inst_mean_bottom_1000': '/mnt/petrelfs/lihao1/DataFilter/llama_output/no_system_bi_inst_mean_bottom_1000/checkpoint-186',
+    #     'llama_bi_inst_mean_top_1000': '/mnt/petrelfs/lihao1/DataFilter/llama_output/no_system_bi_inst_mean_top_1000/checkpoint-186'
+    # }
     peft_models = {
-        'llama_no_system_top_1000': '/mnt/petrelfs/lihao1/data_filter/llama_output/no_system_top_1000/checkpoint-186',
+        'base':'/mnt/petrelfs/lihao1/DataFilter/llama_output/no_system_bi_inst_mean_bottom_1000/checkpoint-186'
     }
     def get_base_model_path(peft_path):
         if 'gemma' in peft_path.lower():
@@ -42,7 +47,8 @@ def safe_test_vllm_peft_models(bench='direct'):
     
     for peft_id, peft_path in tqdm(peft_models.items()):
         base_model = get_base_model_path(peft_path)
-        llm = LLM(model = base_model, enable_lora = True)
+        # llm = LLM(model = base_model, enable_lora = True)
+        llm = LLM(model = base_model)
         sampling_params = SamplingParams(
             temperature=0,
             max_tokens=256,
@@ -50,8 +56,11 @@ def safe_test_vllm_peft_models(bench='direct'):
         outputs = llm.generate(
             goals,
             sampling_params,
-            lora_request=LoRARequest(peft_id, 1, peft_path)
+            # lora_request=LoRARequest(peft_id, 1, peft_path)
         )
+        del llm
+        gc.collect()
+        torch.cuda.empty_cache()
         final_list = [
             {
                 "instruction": goal,

@@ -20,7 +20,7 @@ os.environ["https_proxy"] = "http://10.1.20.57:23128"
 def moderation_eval(query, res):
     for _ in range(3):
         try:
-            client = OpenAI(api_key="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")
+            client = OpenAI(api_key="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")
             response = client.moderations.create(
                 model="text-moderation-latest",
                 input=f"user query:{query} \n response:{res}",
