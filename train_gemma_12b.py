@@ -5,42 +5,55 @@ from transformers import (
     TrainingArguments,
     Trainer,
     DataCollatorForSeq2Seq,
-    AutoModelForCausalLM,
-    AutoTokenizer
+    AutoTokenizer,
+    Gemma3ForCausalLM
 )
 import json
 import os
 import argparse
 
-model = AutoModelForCausalLM.from_pretrained('/mnt/petrelfs/lihao1/trustai/share/models/mistralai/Mistral-7B-Instruct-v0.3', device_map="auto")
+model = Gemma3ForCausalLM.from_pretrained('/mnt/petrelfs/share_data/safety_verifier/models/gemma-3-12b-it', device_map="auto", trust_remote_code = True)
 model.enable_input_require_grads()  # 开启梯度检查点
-tokenizer = AutoTokenizer.from_pretrained('/mnt/petrelfs/lihao1/trustai/share/models/mistralai/Mistral-7B-Instruct-v0.3', use_fast=False)
-tokenizer.pad_token = tokenizer.eos_token
+tokenizer = AutoTokenizer.from_pretrained('/mnt/petrelfs/share_data/safety_verifier/models/gemma-3-12b-it', use_fast=False, trust_remote_code = True)
 
-import debugpy
-try:
-    # 5678 is the default attach port in the VS Code debug configurations. Unless a host and port are specified, host defaults to 127.0.0.1
-    debugpy.listen(("0.0.0.0", 9501))
-    print("Waiting for debugger attach")
-    debugpy.wait_for_client()
-except Exception as e:
-    pass
+# import debugpy
+# try:
+#     # 5678 is the default attach port in the VS Code debug configurations. Unless a host and port are specified, host defaults to 127.0.0.1
+#     debugpy.listen(("0.0.0.0", 9501))
+#     print("Waiting for debugger attach")
+#     debugpy.wait_for_client()
+# except Exception as e:
+#     pass
 
 def alpaca_process_func(example):
     MAX_LENGTH = 2048
     input_ids, attention_mask, labels = [], [], []
     if example['input'] == '':
         message = [
-            {"role": "system", "content": "Below is an instruction that describes a task. Write a response that appropriately completes the request."},
-            {"role": "user", "content": f"### Instruction:\n{example['instruction']}\n\n### Response:\n"},
+            {
+                "role": "user",
+                "content":[
+                    {
+                        "type": "text",
+                        "text": f"{example['instruction']}"
+                    }
+                ]
+             },
         ]
     else:
         message = [
-            {"role": "system", "content": "Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request."},
-            {"role": "user", "content": f"### Instruction:\n{example['instruction']}\n\n### Input:\n{example['input']}\n\n### Response:\n"},
+            {
+                "role": "user",
+                "content": [
+                    {
+                        "type": "text",
+                        "text":f"{example['instruction']}\n{example['input']}"
+                    }
+                ]
+            },
         ]
-    insturction = tokenizer.apply_chat_template(message, add_generation_prompt=True, return_dict=True)
-    response = tokenizer(f"{example['output']}</s>", add_special_tokens=False)
+    insturction = tokenizer.apply_chat_template(message, add_generation_prompt=True, tokenize=True, return_dict=True)
+    response = tokenizer(f"{example['output']}<end_of_turn>\n", add_special_tokens=False)
     input_ids = insturction['input_ids'] + response['input_ids'] + [tokenizer.pad_token_id]
     attention_mask = insturction['attention_mask'] + response['attention_mask'] + [1]
     labels = [-100] * len(insturction['input_ids']) + response['input_ids'] + [tokenizer.pad_token_id]
@@ -56,8 +69,8 @@ def alpaca_process_func(example):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, default='data/Med/HealthCareMagic-sample_clean.json')
-    parser.add_argument('--output_path', type=str, default='output/HealthCareMagic')
+    parser.add_argument('--data_path', type=str, default='gemma_3_12b_sort_results/gemma_3_12b_bi_res_logits_avg100_mean_bottom_1000.json')
+    parser.add_argument('--output_path', type=str, default='gemma_3_12b_output/gemma_3_12b_bi_res_logits_avg100_mean_bottom_1000')
     args = parser.parse_args()
     train_json_path = args.data_path
     train_ds = Dataset.from_json(train_json_path)
@@ -80,20 +93,20 @@ if __name__ == '__main__':
     peft_model = get_peft_model(model, config)
 
     # 配置Trainer
-    os.environ["WANDB_PROJECT"]="Mistral"
+    os.environ["WANDB_PROJECT"]="Gemma"
     args = TrainingArguments(
         output_dir=args.output_path,
         per_device_train_batch_size=8,
         gradient_accumulation_steps=2,
         logging_steps=1,
         num_train_epochs=3,
-        save_steps=100,
+        save_steps=50,
         save_total_limit=1,
         learning_rate=1e-4,
         save_on_each_node=True,
         gradient_checkpointing=True,
         report_to="wandb",
-        warmup_ratio=0.1,
+        warmup_ratio=0.1
     )
     trainer = Trainer(
         model=peft_model,

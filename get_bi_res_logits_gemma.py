@@ -6,9 +6,14 @@ import random
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-res_logits_str = 'bi_res_logits_avg100'
-model_id = '/mnt/petrelfs/share_data/safety_verifier/models/gemma-3-4b-it'
-dir_id = 'gemma_3_4b_sort_results'
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('--model_size', type=str, default='4b')
+args = parser.parse_args()
+
+res_logits_str = f"gemma_3_{args.model_size}_bi_res_logits_avg100"
+model_id = f'/mnt/petrelfs/share_data/safety_verifier/models/gemma-3-{args.model_size}-it'
+dir_id = f'gemma_3_{args.model_size}_sort_results'
 
 model = Gemma3ForCausalLM.from_pretrained(model_id,
                                              torch_dtype=torch.bfloat16,
@@ -44,20 +49,25 @@ def alpaca_data_process(data, is_alpaca = True):
     if is_alpaca:
         if data['input'] == '':
             message = [
-                {"role": "user", "content": f"Below is an instruction that describes a task. Write a response that appropriately completes the request.\n### Instruction:\n{data['instruction']}\n\n### Response:\n"},
+                {"role": "user", "content": f"{data['instruction']}"},
                 {"role": "assistant", "content": data['output']},
             ]
         else:
             message = [
-                {"role": "user", "content": f"Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.\n### Instruction:\n{data['instruction']}\n\n### Input:\n{data['input']}\n\n### Response:\n"},
+                {"role": "user", "content": f"{data['instruction']}\n{data['input']}"},
                 {"role": "assistant", "content": data['output']},
             ]
-    else:
-        message = [
-            {"role": "system", "content": "Below is an instruction that describes a task. Write a response that appropriately completes the request."},
-            {"role": "user", "content": f"{data['instruction']}"},
-            {"role": "assistant", "content": data['output']},
-        ]
+    else:                      
+        if data['input'] == '':
+            message = [
+                {"role": "user", "content": f"{data['instruction']}"},
+                {"role": "assistant", "content": data['output']},
+            ]
+        else:
+            message = [
+                {"role": "user", "content": f"{data['instruction']}\n{data['input']}"},
+                {"role": "assistant", "content": data['output']},
+            ]
     with torch.inference_mode():
         input_ids = tokenizer.apply_chat_template(
             message,

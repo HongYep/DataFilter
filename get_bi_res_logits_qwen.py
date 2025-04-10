@@ -6,9 +6,14 @@ import random
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-res_logits_str = 'llama_bi_res_logits_avg100'
-model_id = '/mnt/petrelfs/share_data/safety_verifier/models/Llama-3.1-8B-Instruct'
-dir_id = 'llama_sort_results'
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('--model_size', type=str, default='7B')
+args = parser.parse_args()
+
+res_logits_str = f"qwen_2_5_{args.model_size}_bi_res_logits_avg100"
+model_id = f'/mnt/petrelfs/share_data/safety_verifier/models/Qwen2.5-{args.model_size}-Instruct'
+dir_id = f'qwen_2_5_{args.model_size}_sort_results'
 
 model = AutoModelForCausalLM.from_pretrained(model_id,
                                              torch_dtype=torch.bfloat16,

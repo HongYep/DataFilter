@@ -2,8 +2,15 @@
 data/
 gemma_3_4b_output/
 gemma_3_4b_sort_results/
+gemma_3_12b_output/
+gemma_3_12b_sort_results/
 llama_output/
 llama_sort_results/
+qwen_2_5_14B_output/
+qwen_2_5_14B_sort_results/
+qwen_2_5_7B_output/
+qwen_2_5_7B_sort_results/
+random_results/
 wandb/
 safe_test/med_results/
 safe_test/fac_results/

@@ -5,16 +5,22 @@ from tqdm import tqdm
 import random
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
+import argparse
 
-res_logits_str = 'llama_bi_res_logits_avg100'
-model_id = '/mnt/petrelfs/share_data/safety_verifier/models/Llama-3.1-8B-Instruct'
-dir_id = 'llama_sort_results'
+import argparse
+parser = argparse.ArgumentParser()
+parser.add_argument('--model_size', type=str, default='7B')
+args = parser.parse_args()
+
+res_logits_str = f"qwen_2_5_{args.model_size}_bi_res_rep_avg100"
+model_id = f'/mnt/petrelfs/share_data/safety_verifier/models/Qwen2.5-{args.model_size}-Instruct'
+dir_id = f'qwen_2_5_{args.model_size}_sort_results'
 
 model = AutoModelForCausalLM.from_pretrained(model_id,
-                                             torch_dtype=torch.bfloat16,
-                                             output_hidden_states=True,
-                                             return_dict_in_generate=True,
-                                             device_map="auto")
+                                            torch_dtype=torch.bfloat16,
+                                            output_hidden_states=True,
+                                            return_dict_in_generate=True,
+                                            device_map="auto")
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 
 # import debugpy
@@ -68,7 +74,7 @@ def alpaca_data_process(data, is_alpaca = True):
             message,
             return_tensors="pt"
         ).to(model.device)
-        rep = model(input_ids).logits[0][-1].cpu()
+        rep = model(input_ids).hidden_states[-1][0][-1].cpu()
     return rep
 
 def unsafe_data_process(data):
@@ -77,7 +83,7 @@ def unsafe_data_process(data):
             data['messages'],
             return_tensors="pt"
         ).to(model.device)
-        rep = model(input_ids).logits[0][-1].cpu()
+        rep = model(input_ids).hidden_states[-1][0][-1].cpu()
     return rep
 
 def top_cosine_similarity(A, B, C, avg_n = 100):
@@ -108,7 +114,7 @@ for i,s in zip(indices, scores):
     target_data[i].update({'sim_score': float(s)})
     values.append(target_data[i])
 
-with open(f"{dir_id}/{res_logits_str}_mean.json",'w') as file:
+with open(f"{dir_id}/{res_rep_str}_mean.json",'w') as file:
     json.dump(values, file, indent=4)
 
 top_indices = indices[:select_n]
@@ -118,7 +124,7 @@ for i,s in zip(top_indices, top_scores):
     target_data[i].update({'sim_score': float(s)})
     top_values.append(target_data[i])
 
-with open(f"{dir_id}/{res_logits_str}_mean_top_{select_n}.json",'w') as file:
+with open(f"{dir_id}/{res_rep_str}_mean_top_{select_n}.json",'w') as file:
     json.dump(top_values, file, indent=4)
 
 bottom_indices = indices[-select_n:]
@@ -129,5 +135,5 @@ for i,s in zip(bottom_indices, bottom_scores):
     target_data[i].update({'sim_score': float(s)})
     bottom_values.append(target_data[i])
 
-with open(f"{dir_id}/{res_logits_str}_mean_bottom_{select_n}.json",'w') as file:
+with open(f"{dir_id}/{res_rep_str}_mean_bottom_{select_n}.json",'w') as file:
     json.dump(bottom_values, file, indent=4)

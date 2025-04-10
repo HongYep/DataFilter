@@ -6,12 +6,12 @@ import random
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-res_logits_str = 'alpaca-cleaned-bi_res_rep'
-model_id = '/mnt/petrelfs/lihao1/trustai/share/models/meta-llama/Llama-3.1-8B-Instruct'
+res_logits_str = 'llama_bi_res_rep_avg100'
+model_id = '/mnt/petrelfs/share_data/safety_verifier/models/Llama-3.1-8B-Instruct'
 dir_id = 'llama_sort_results'
 
 model = AutoModelForCausalLM.from_pretrained(model_id,
-                                             torch_dtype=torch.float16,
+                                             torch_dtype=torch.bfloat16,
                                              output_hidden_states=True,
                                              return_dict_in_generate=True,
                                              device_map="auto")
@@ -29,13 +29,13 @@ with open('data/alpaca-cleaned/alpaca_data_cleaned.json','r') as f:
     data = []
     target_data = json.load(f)
     
-with open('data/pure_bad_dataset/pure-bad-hate-speech-selected-10-original.jsonl', 'r') as f:
+with open('data/pure_bad_dataset/pure-bad-100.jsonl', 'r') as f:
     data = []
     for line in f:
         data.append(json.loads(line))
     unsafe_data = data
 
-with open('data/pure_bad_dataset/pure-bad-hate-speech-selected-10-anchor1.jsonl', 'r') as f:
+with open('data/pure_bad_dataset/pure-bad-100-anchor1.jsonl', 'r') as f:
     safe_data = []
     for line in f:
         safe_data.append(json.loads(line))
@@ -44,22 +44,26 @@ def alpaca_data_process(data, is_alpaca = True):
     if is_alpaca:
         if data['input'] == '':
             message = [
-                {"role": "system", "content": "Below is an instruction that describes a task. Write a response that appropriately completes the request."},
-                {"role": "user", "content": f"### Instruction:\n{data['instruction']}\n\n### Response:\n"},
+                {"role": "user", "content": f"{data['instruction']}"},
                 {"role": "assistant", "content": data['output']},
             ]
         else:
             message = [
-                {"role": "system", "content": "Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request."},
-                {"role": "user", "content": f"### Instruction:\n{data['instruction']}\n\n### Input:\n{data['input']}\n\n### Response:\n"},
+                {"role": "user", "content": f"{data['instruction']}\n{data['input']}"},
                 {"role": "assistant", "content": data['output']},
             ]
     else:
-        message = [
-            {"role": "system", "content": "Below is an instruction that describes a task. Write a response that appropriately completes the request."},
-            {"role": "user", "content": data['instruction']},
-            {"role": "assistant", "content": data['output']},
-        ]
+        if data['input'] == '':
+            message = [
+                {"role": "user", "content": f"{data['instruction']}"},
+                {"role": "assistant", "content": data['output']},
+            ]
+        else:
+            message = [
+                {"role": "user", "content": f"{data['instruction']}\n{data['input']}"},
+                {"role": "assistant", "content": data['output']},
+            ]
+
     with torch.inference_mode():
         input_ids = tokenizer.apply_chat_template(
             message,
@@ -77,7 +81,7 @@ def safety_dat_process(data):
         rep = model(input_ids).hidden_states[-1][0][-1].cpu()
     return rep
 
-def top_cosine_similarity(A, B, C, avg_n = 10):
+def top_cosine_similarity(A, B, C, avg_n = 100):
     A = A.to(torch.float32).numpy()
     B = B.to(torch.float32).numpy()
     C = C.to(torch.float32).numpy()
