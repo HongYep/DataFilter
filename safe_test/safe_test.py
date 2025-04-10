@@ -17,25 +17,43 @@ from vllm.lora.request import LoRARequest
 #     pass
 
 def safe_test_vllm_peft_models(bench='direct'):
-    peft_models = {
-        'llama_no_system_top_1000': '/mnt/petrelfs/lihao1/data_filter/llama_output/no_system_top_1000/checkpoint-186',
+        peft_models = {
+        # 'gemma_3_4b_bi_res_logits_avg100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/gemma_3_4b_bi_res_logits_avg100_mean_bottom_1000/checkpoint-186',
+        # 'gemma_3_4b_bi_res_logits_avg100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/gemma_3_4b_bi_res_logits_avg100_mean_top_1000/checkpoint-186',
+        # 'gemma_3_4b_bi_res_rep_avg100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/gemma_3_4b_bi_res_rep_avg100_mean_bottom_1000/checkpoint-186',
+        # 'gemma_3_4b_bi_res_rep_avg100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/gemma_3_4b_bi_res_rep_avg100_mean_top_1000/checkpoint-186',
+        'gemma_3_12b_bi_res_logits_avg100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_12b_output/gemma_3_12b_bi_res_logits_avg100_mean_bottom_1000/checkpoint-186',
+        'gemma_3_12b_bi_res_logits_avg100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_12b_output/gemma_3_12b_bi_res_logits_avg100_mean_top_1000/checkpoint-186',
+        # 'llama_bi_res_logits_avg100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/llama_output/llama_bi_res_logits_avg100_mean_bottom_1000/checkpoint-186',
+        # 'llama_bi_res_logits_avg100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/llama_output/llama_bi_res_logits_avg100_mean_top_1000/checkpoint-186',
+        # 'llama_bi_res_rep_avg100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/llama_output/llama_bi_res_rep_avg100_mean_bottom_1000/checkpoint-186',
+        # 'llama_bi_res_rep_avg100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/llama_output/llama_bi_res_rep_avg100_mean_top_1000/checkpoint-186',
+        # 'qwen_2_5_7B_bi_res_logits_avg100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/qwen_2_5_7B_output/qwen_2_5_7B_bi_res_logits_avg100_mean_bottom_1000/checkpoint-186',
+        # 'qwen_2_5_7B_bi_res_logits_avg100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/qwen_2_5_7B_output/qwen_2_5_7B_bi_res_logits_avg100_mean_top_1000/checkpoint-186',
+        # 'qwen_2_5_14B_bi_res_logits_avg100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/qwen_2_5_14B_output/qwen_2_5_14B_bi_res_logits_avg100_mean_bottom_1000/checkpoint-186',
+        # 'qwen_2_5_14B_bi_res_logits_avg100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/qwen_2_5_14B_output/qwen_2_5_14B_bi_res_logits_avg100_mean_top_1000/checkpoint-186',
+
     }
     def get_base_model_path(peft_path):
-        if 'gemma' in peft_path.lower():
-            return '/mnt/petrelfs/lihao1/trustai/share/models/google/gemma-3-4b-it'
+        if 'gemma_3_4b' in peft_path.lower():
+            return '/mnt/petrelfs/share_data/safety_verifier/models/gemma-3-4b-it'
         
-        elif 'qwen' in peft_path.lower():
-            return '/mnt/petrelfs/lihao1/trustai/share/models/Qwen/Qwen2.5-7B-Instruct'
+        elif 'gemma_3_12b ' in peft_path.lower():
+            return '/mnt/petrelfs/share_data/safety_verifier/models/gemma-3-12b-it'
+
+        elif 'qwen_2_5_7b' in peft_path.lower():
+            return '/mnt/petrelfs/share_data/safety_verifier/models/Qwen2.5-7B-Instruct'
         
-        elif 'mistral' in peft_path.lower():
-            return '/mnt/petrelfs/lihao1/trustai/share/models/mistralai/Mistral-7B-Instruct-v0.3'
+        elif 'qwen_2_5_14b' in peft_path.lower():
+            return '/mnt/petrelfs/share_data/safety_verifier/models/Qwen2.5-14B-Instruct'
         
-        return '/mnt/petrelfs/lihao1/trustai/share/models/meta-llama/Llama-3.1-8B-Instruct'
+        return '/mnt/petrelfs/share_data/safety_verifier/models/Llama-3.1-8B-Instruct'
     def get_goals(bench):
         goals = {
-            'direct':pd.read_csv('directHarm4.csv')['Goal'].to_list(),
-            'harm':pd.read_csv('harmbench.csv')['Goal'].to_list(),
-            'phi':pd.read_csv('phi/total.csv')['Goal'].to_list()
+            'test':pd.read_csv('/mnt/petrelfs/luzhenghao/safe_useful/safe_test/test.csv')['Goal'].to_list(),
+            'direct':pd.read_csv('/mnt/petrelfs/luzhenghao/safe_useful/safe_test/directHarm4.csv')['Goal'].to_list(),
+            'harm':pd.read_csv('/mnt/petrelfs/luzhenghao/safe_useful/safe_test/harmbench.csv')['Goal'].to_list(),
+            'phi':pd.read_csv('/mnt/petrelfs/luzhenghao/safe_useful/safe_test/phi/total.csv')['Goal'].to_list()
         }
         return goals[bench]
     goals = get_goals(bench)
@@ -59,7 +77,7 @@ def safe_test_vllm_peft_models(bench='direct'):
             }
             for goal, output in zip(goals, outputs)
         ]
-        with open(f'./results/{peft_id}-{bench}.json','w') as f:
+        with open(f'./med_results/{peft_id}-{bench}.json','w') as f:
             json.dump(final_list, f, indent=4)
         
         
