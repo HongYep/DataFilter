@@ -29,13 +29,11 @@ def safe_data_process(data, is_alpaca = True):
     if is_alpaca:
         if data['input'] == '':
             message = [
-                {"role": "system", "content": f"Below is an instruction that describes a task. Write a response that appropriately completes the request."},
-                {"role": "user", "content": f"### Instruction:\n{data['instruction']}\n\n### Response:\n"},
+                {"role": "user", "content": f"Below is an instruction that describes a task. Write a response that appropriately completes the request.\n### Instruction:\n{data['instruction']}\n\n### Response:\n"},
             ]
         else:
             message = [ 
-                {"role": "system", "content": f"Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request."},
-                {"role": "user", "content": f"### Instruction:\n{data['instruction']}\n\n### Input:\n{data['input']}\n\n### Response:\n"},
+                {"role": "user", "content": f"Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.\n### Instruction:\n{data['instruction']}\n\n### Input:\n{data['input']}\n\n### Response:\n"},
             ]
     else:
         message = [
@@ -76,7 +74,7 @@ def top_cosine_similarity(A, B, C, avg_n = 10):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--logits_str', type=str, default='with_system')
+    parser.add_argument('--logits_str', type=str, default='no_system')
     parser.add_argument('--input_json', type=str, default='data/alpaca-gpt4-clean.json')
     args = parser.parse_args()
     logits_str = args.logits_str + "_bi_inst" if res_logits else args.logits_str

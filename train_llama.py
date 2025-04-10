@@ -32,11 +32,11 @@ def alpaca_process_func(example):
     input_ids, attention_mask, labels = [], [], []
     if example['input'] == '':
         message = [
-            {"role": "user", "content": f"Below is an instruction that describes a task. Write a response that appropriately completes the request.\n### Instruction:\n{example['instruction']}\n\n### Response:\n"},
+            {"role": "user", "content": f"{example['instruction']}"},
         ]
     else:
         message = [
-            {"role": "user", "content": f"Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.\n### Instruction:\n{example['instruction']}\n\n### Input:\n{example['input']}\n\n### Response:\n"},
+            {"role": "user", "content": f"{example['instruction']}\n{example['input']}"},
         ]
     insturction = tokenizer.apply_chat_template(message, add_generation_prompt=True, return_dict=True)
     response = tokenizer(f"{example['output']}<|eot_id|>", add_special_tokens=False)
@@ -55,8 +55,8 @@ def alpaca_process_func(example):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, default='llama_sort_results/no_system_bi_inst_mean_bottom_1000.json')
-    parser.add_argument('--output_path', type=str, default='llama_output/no_system_bi_inst_mean_bottom_1000')
+    parser.add_argument('--data_path', type=str, default='llama_sort_results/llama_bi_res_logits_avg100_mean_bottom_1000.json')
+    parser.add_argument('--output_path', type=str, default='llama_output/llama_bi_res_logits_avg100_mean_bottom_1000')
     args = parser.parse_args()
     train_json_path = args.data_path
     train_ds = Dataset.from_json(train_json_path)

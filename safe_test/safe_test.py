@@ -160,60 +160,41 @@ def safe_test_qwen_vl():
 
 def safe_test_peft_models(bench='direct'):
     peft_models = {
-        # "gemma_3_4b_bi_res_logits_avg100_qkvo_mean_bottom_1000": "/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_logits_avg100_qkvo_mean_bottom_1000/checkpoint-186",
-        # "gemma_3_4b_bi_res_logits_avg100_qkvo_mean_top_1000": "/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_logits_avg100_qkvo_mean_top_1000/checkpoint-186",
-        # "gemma_3_4b_bi_res_rep_avg100_qkvo_mean_bottom_1000": "/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_rep_avg100_qkvo_mean_bottom_1000/checkpoint-186",
-        # "gemma_3_4b_bi_res_rep_avg100_qkvo_mean_top_1000": "/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_rep_avg100_qkvo_mean_top_1000/checkpoint-186",
-        # "gemma_3_4b_bi_res_logits_avg100_updown_mean_bottom_1000": "/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_logits_avg100_updown_mean_bottom_1000/checkpoint-186",
-        # "gemma_3_4b_bi_res_logits_avg100_updown_mean_top_1000": "/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_logits_avg100_updown_mean_top_1000/checkpoint-186",
-        # "gemma_3_4b_bi_res_rep_avg100_updown_mean_bottom_1000": "/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_rep_avg100_updown_mean_bottom_1000/checkpoint-186",
-        # "gemma_3_4b_bi_res_rep_avg100_updown_mean_top_1000": "/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_rep_avg100_updown_mean_top_1000/checkpoint-186",
-        # 'llama_no_system_top_1000': '/mnt/petrelfs/lihao1/data_filter/llama_output/no_system_top_1000/checkpoint-186',
-        # 'llama_no_system_bottom_1000': '/mnt/petrelfs/lihao1/data_filter/llama_output/no_system_bottom_1000/checkpoint-186',
-        'fac_bi_res_logits_avg100_mean_top_1000_qkvo': '/mnt/petrelfs/luzhenghao/LLaMA-Factory/saves/gemma_3_4b/bi_res_logits_avg100_mean_top_1000_qkvo_merged',
-        'fac_bi_res_logits_avg100_mean_bottom_1000_qkvo': '/mnt/petrelfs/luzhenghao/LLaMA-Factory/saves/gemma_3_4b/bi_res_logits_avg100_mean_bottom_1000_qkvo_merged',
-        'fac_bi_res_logits_avg100_mean_top_1000_updown': '/mnt/petrelfs/luzhenghao/LLaMA-Factory/saves/gemma_3_4b/bi_res_logits_avg100_mean_top_1000_updown_merged',
-        'fac_bi_res_logits_avg100_mean_bottom_1000_updown': '/mnt/petrelfs/luzhenghao/LLaMA-Factory/saves/gemma_3_4b/bi_res_logits_avg100_mean_bottom_1000_updown_merged',
-        # 'bi_res_logits_avg100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_logits_avg100_mean_bottom_1000/checkpoint-186',
-        # 'bi_res_logits_avg100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_logits_avg100_mean_top_1000/checkpoint-186',
-        # 'bi_res_rep_avg100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_rep_avg100_mean_bottom_1000/checkpoint-186',
-        # 'bi_res_rep_avg100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_rep_avg100_mean_top_1000/checkpoint-186',
-        # 'bi_res_logits_100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_logits_100_mean_bottom_1000/checkpoint-186',
-        # 'bi_res_logits_100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_logits_100_mean_top_1000/checkpoint-186',
-        # 'bi_res_rep_100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_rep_100_mean_bottom_1000/checkpoint-186',
-        # 'bi_res_rep_100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_rep_100_mean_top_1000/checkpoint-186',
-        # 'bi_llama_no_system_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/llama_output/no_system_bi_inst_mean_top_1000/checkpoint-186',
-        # 'bi_llama_no_system_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/llama_output/no_system_bi_inst_mean_bottom_1000/checkpoint-186',
-        # 'bi_llama_with_system_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/llama_output/with_system_bi_inst_mean_top_1000/checkpoint-186',
-        # 'bi_llama_with_system_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/llama_output/with_system_bi_inst_mean_bottom_1000/checkpoint-186',
-        # 'bi_res_logits_mean_bottom_1000':'/mnt/petrelfs/lihao1/data_filter/llama_output/bi_res_logits_mean_bottom_1000/checkpoint-186',
-        # 'bi_res_logits_mean_top_1000':'/mnt/petrelfs/lihao1/data_filter/llama_output/bi_res_logits_mean_top_1000/checkpoint-186',
-        # 'gemma_3_4b-bi_res_logits_mean_top_1000':'/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_logits_mean_top_1000/checkpoint-186',
-        # 'gemma_3_4b-bi_res_logits_mean_bottom_1000':'/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/bi_res_logits_mean_bottom_1000/checkpoint-186',
-        # "llama_with_system_inst_mean_bottom_1000": '/mnt/petrelfs/luzhenghao/safe_useful/llama_output/with_system_inst_mean_bottom_1000/checkpoint-186',
-        # "llama_with_system_inst_mean_top_1000": '/mnt/petrelfs/luzhenghao/safe_useful/llama_output/with_system_inst_mean_top_1000/checkpoint-186',
-        # "gemma_with_system_inst_mean_bottom_1000": '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/with_system_inst_mean_bottom_1000/checkpoint-186',
-        # "gemma_with_system_inst_mean_top_1000": '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/with_system_inst_mean_top_1000/checkpoint-186',
-        # 'bi_res_rep_mean_top_1000':'/mnt/petrelfs/lihao1/data_filter/llama_output/bi_res_rep_mean_top_1000/checkpoint-186',
-        # 'bi_res_rep_mean_bottom_1000':'/mnt/petrelfs/lihao1/data_filter/llama_output/bi_res_rep_mean_bottom_1000/checkpoint-186',
-        # 'bi_res_logits_mean_top_1000':'/mnt/petrelfs/lihao1/data_filter/llama_output/bi_res_logits_mean_top_1000/checkpoint-186',
-        # 'bi_res_logits_mean_bottom_1000':'/mnt/petrelfs/lihao1/data_filter/llama_output/bi_res_logits_mean_bottom_1000/checkpoint-186',
+        # 'gemma_3_4b_bi_res_logits_avg100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/gemma_3_4b_bi_res_logits_avg100_mean_bottom_1000/checkpoint-186',
+        # 'gemma_3_4b_bi_res_logits_avg100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/gemma_3_4b_bi_res_logits_avg100_mean_top_1000/checkpoint-186',
+        # 'gemma_3_4b_bi_res_rep_avg100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/gemma_3_4b_bi_res_rep_avg100_mean_bottom_1000/checkpoint-186',
+        # 'gemma_3_4b_bi_res_rep_avg100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_4b_output/gemma_3_4b_bi_res_rep_avg100_mean_top_1000/checkpoint-186',
+        'gemma_3_12b_bi_res_logits_avg100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_12b_output/gemma_3_12b_bi_res_logits_avg100_mean_bottom_1000/checkpoint-186',
+        'gemma_3_12b_bi_res_logits_avg100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_12b_output/gemma_3_12b_bi_res_logits_avg100_mean_top_1000/checkpoint-186',
+        # 'llama_bi_res_logits_avg100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/llama_output/llama_bi_res_logits_avg100_mean_bottom_1000/checkpoint-186',
+        # 'llama_bi_res_logits_avg100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/llama_output/llama_bi_res_logits_avg100_mean_top_1000/checkpoint-186',
+        # 'llama_bi_res_rep_avg100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/llama_output/llama_bi_res_rep_avg100_mean_bottom_1000/checkpoint-186',
+        # 'llama_bi_res_rep_avg100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/llama_output/llama_bi_res_rep_avg100_mean_top_1000/checkpoint-186',
+        # 'qwen_2_5_7B_bi_res_logits_avg100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/qwen_2_5_7B_output/qwen_2_5_7B_bi_res_logits_avg100_mean_bottom_1000/checkpoint-186',
+        # 'qwen_2_5_7B_bi_res_logits_avg100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/qwen_2_5_7B_output/qwen_2_5_7B_bi_res_logits_avg100_mean_top_1000/checkpoint-186',
+        # 'qwen_2_5_14B_bi_res_logits_avg100_mean_bottom_1000': '/mnt/petrelfs/luzhenghao/safe_useful/qwen_2_5_14B_output/qwen_2_5_14B_bi_res_logits_avg100_mean_bottom_1000/checkpoint-186',
+        # 'qwen_2_5_14B_bi_res_logits_avg100_mean_top_1000': '/mnt/petrelfs/luzhenghao/safe_useful/qwen_2_5_14B_output/qwen_2_5_14B_bi_res_logits_avg100_mean_top_1000/checkpoint-186',
+
     }
     
     def get_tokenizer_path(peft_path):
-        if 'gemma' in peft_path.lower():
+        if 'gemma_3_4b' in peft_path.lower():
             return '/mnt/petrelfs/share_data/safety_verifier/models/gemma-3-4b-it'
         
-        elif 'qwen' in peft_path.lower():
-            return '/mnt/hwfile/trustai/lihao1/models/Qwen2.5-7B-Instruct'
+        elif 'gemma_3_12b ' in peft_path.lower():
+            return '/mnt/petrelfs/share_data/safety_verifier/models/gemma-3-12b-it'
+
+        elif 'qwen_2_5_7b' in peft_path.lower():
+            return '/mnt/petrelfs/share_data/safety_verifier/models/Qwen2.5-7B-Instruct'
         
-        elif 'mistral' in peft_path.lower():
-            return '/mnt/petrelfs/lihao1/trustai/share/models/mistralai/Mistral-7B-Instruct-v0.3'
+        elif 'qwen_2_5_14b' in peft_path.lower():
+            return '/mnt/petrelfs/share_data/safety_verifier/models/Qwen2.5-14B-Instruct'
         
         return '/mnt/petrelfs/share_data/safety_verifier/models/Llama-3.1-8B-Instruct'
     
     def get_goals(bench):
         goals = {
+            'test':pd.read_csv('/mnt/petrelfs/luzhenghao/safe_useful/safe_test/test.csv')['Goal'].to_list(),
             'direct':pd.read_csv('/mnt/petrelfs/luzhenghao/safe_useful/safe_test/directHarm4.csv')['Goal'].to_list(),
             'harm':pd.read_csv('/mnt/petrelfs/luzhenghao/safe_useful/safe_test/harmbench.csv')['Goal'].to_list(),
             'phi':pd.read_csv('/mnt/petrelfs/luzhenghao/safe_useful/safe_test/phi/total.csv')['Goal'].to_list()
@@ -226,6 +207,7 @@ def safe_test_peft_models(bench='direct'):
             model = Gemma3ForCausalLM.from_pretrained(peft_path, torch_dtype=torch.bfloat16, device_map="auto")
         else:
             model = AutoModelForCausalLM.from_pretrained(peft_path, torch_dtype=torch.bfloat16, device_map="auto")
+        print(get_tokenizer_path(peft_path))
         tokenizer = AutoTokenizer.from_pretrained(get_tokenizer_path(peft_path))
         final_list = []
         for goal in tqdm(goals):
@@ -247,6 +229,7 @@ def safe_test_peft_models(bench='direct'):
                 do_sample=False,
                 temperature=0.0,
             )
+            # print(outputs[0][input_ids.shape[-1]:])
             response = tokenizer.decode(outputs[0][input_ids.shape[-1]:], skip_special_tokens=True)
             final_list.append({
                 'instruction':goal,

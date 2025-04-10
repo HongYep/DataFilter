@@ -5,16 +5,17 @@ from transformers import (
     TrainingArguments,
     Trainer,
     DataCollatorForSeq2Seq,
-    AutoTokenizer,
-    Gemma3ForCausalLM
+    AutoModelForCausalLM,
+    AutoTokenizer
 )
 import json
 import os
 import argparse
 
-model = Gemma3ForCausalLM.from_pretrained('/mnt/petrelfs/share_data/safety_verifier/models/gemma-3-4b-it', device_map="auto", trust_remote_code = True)
+model = AutoModelForCausalLM.from_pretrained('/mnt/petrelfs/share_data/safety_verifier/models/Qwen2.5-7B-Instruct', device_map="auto")
 model.enable_input_require_grads()  # 开启梯度检查点
-tokenizer = AutoTokenizer.from_pretrained('/mnt/petrelfs/share_data/safety_verifier/models/gemma-3-4b-it', use_fast=False, trust_remote_code = True)
+tokenizer = AutoTokenizer.from_pretrained('/mnt/petrelfs/share_data/safety_verifier/models/Qwen2.5-7B-Instruct', use_fast=False)
+tokenizer.pad_token = tokenizer.eos_token
 
 # import debugpy
 # try:
@@ -25,35 +26,20 @@ tokenizer = AutoTokenizer.from_pretrained('/mnt/petrelfs/share_data/safety_verif
 # except Exception as e:
 #     pass
 
+
 def alpaca_process_func(example):
     MAX_LENGTH = 2048
     input_ids, attention_mask, labels = [], [], []
     if example['input'] == '':
         message = [
-            {
-                "role": "user",
-                "content":[
-                    {
-                        "type": "text",
-                        "text": f"{example['instruction']}"
-                    }
-                ]
-             },
+            {"role": "user", "content": f"{example['instruction']}"},
         ]
     else:
         message = [
-            {
-                "role": "user",
-                "content": [
-                    {
-                        "type": "text",
-                        "text":f"{example['instruction']}\n{example['input']}"
-                    }
-                ]
-            },
+            {"role": "user", "content": f"{example['instruction']}\n{example['input']}"},
         ]
-    insturction = tokenizer.apply_chat_template(message, add_generation_prompt=True, tokenize=True, return_dict=True)
-    response = tokenizer(f"{example['output']}<end_of_turn>\n", add_special_tokens=False)
+    insturction = tokenizer.apply_chat_template(message, add_generation_prompt=True, return_dict=True)
+    response = tokenizer(f"{example['output']}<|eot_id|>", add_special_tokens=False)
     input_ids = insturction['input_ids'] + response['input_ids'] + [tokenizer.pad_token_id]
     attention_mask = insturction['attention_mask'] + response['attention_mask'] + [1]
     labels = [-100] * len(insturction['input_ids']) + response['input_ids'] + [tokenizer.pad_token_id]
@@ -69,8 +55,8 @@ def alpaca_process_func(example):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, default='gemma_3_4b_sort_results/gemma_3_4b_bi_res_logits_avg100_mean_top_1000.json')
-    parser.add_argument('--output_path', type=str, default='gemma_3_4b_output/gemma_3_4b_bi_res_logits_avg100_mean_top_1000')
+    parser.add_argument('--data_path', type=str, default='qwen_2_5_7B_sort_results/qwen_2_5_7B_bi_res_logits_avg100_mean_bottom_1000.json')
+    parser.add_argument('--output_path', type=str, default='qwen_2_5_7B_output/qwen_2_5_7B_bi_res_logits_avg100_mean_bottom_1000')
     args = parser.parse_args()
     train_json_path = args.data_path
     train_ds = Dataset.from_json(train_json_path)
@@ -93,14 +79,14 @@ if __name__ == '__main__':
     peft_model = get_peft_model(model, config)
 
     # 配置Trainer
-    os.environ["WANDB_PROJECT"]="Gemma"
+    os.environ["WANDB_PROJECT"]="Qwen7B"
     args = TrainingArguments(
         output_dir=args.output_path,
         per_device_train_batch_size=8,
         gradient_accumulation_steps=2,
         logging_steps=1,
         num_train_epochs=3,
-        save_steps=50,
+        save_steps=100,
         save_total_limit=1,
         learning_rate=1e-4,
         save_on_each_node=True,
