@@ -12,9 +12,9 @@ import json
 import os
 import argparse
 
-model = AutoModelForCausalLM.from_pretrained('/mnt/petrelfs/share_data/safety_verifier/models/Llama-3.1-8B-Instruct', device_map="auto")
+model = AutoModelForCausalLM.from_pretrained('/mnt/petrelfs/lihao1/trustai/share/models/meta-llama/Llama-3.1-8B-Instruct', device_map="auto")
 model.enable_input_require_grads()  # 开启梯度检查点
-tokenizer = AutoTokenizer.from_pretrained('/mnt/petrelfs/share_data/safety_verifier/models/Llama-3.1-8B-Instruct', use_fast=False)
+tokenizer = AutoTokenizer.from_pretrained('/mnt/petrelfs/lihao1/trustai/share/models/meta-llama/Llama-3.1-8B-Instruct', use_fast=False)
 tokenizer.pad_token = tokenizer.eos_token
 
 # import debugpy
@@ -32,11 +32,11 @@ def alpaca_process_func(example):
     input_ids, attention_mask, labels = [], [], []
     if example['input'] == '':
         message = [
-            {"role": "user", "content": f"Below is an instruction that describes a task. Write a response that appropriately completes the request.\n### Instruction:\n{example['instruction']}\n\n### Response:\n"},
+            {"role": "user", "content": f"{example['instruction']}"},
         ]
     else:
         message = [
-            {"role": "user", "content": f"Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.\n### Instruction:\n{example['instruction']}\n\n### Input:\n{example['input']}\n\n### Response:\n"},
+            {"role": "user", "content": f"{example['instruction']}\n{example['input']}"},
         ]
     insturction = tokenizer.apply_chat_template(message, add_generation_prompt=True, return_dict=True)
     response = tokenizer(f"{example['output']}<|eot_id|>", add_special_tokens=False)
