@@ -4,8 +4,12 @@ gemma_3_4b_output/
 gemma_3_4b_sort_results/
 gemma_3_12b_output/
 gemma_3_12b_sort_results/
+gemma_2_9b_output/
+gemma_2_9b_sort_results/
 llama_output/
 llama_sort_results/
+llama3_output/
+llama3_sort_results/
 qwen_2_5_14B_output/
 qwen_2_5_14B_sort_results/
 qwen_2_5_7B_output/
@@ -15,3 +19,8 @@ wandb/
 safe_test/med_results/
 safe_test/fac_results/
 safe_test/results/
+llama_score_results/
+wild_score_results/
+sample_1000_results/
+mdjudge_score_results/
+moderation_score_results/

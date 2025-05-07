@@ -12,6 +12,8 @@ import json
 import os
 import argparse
 
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
 model = Gemma3ForCausalLM.from_pretrained('/mnt/petrelfs/share_data/safety_verifier/models/gemma-3-12b-it', device_map="auto", trust_remote_code = True)
 model.enable_input_require_grads()  # 开启梯度检查点
 tokenizer = AutoTokenizer.from_pretrained('/mnt/petrelfs/share_data/safety_verifier/models/gemma-3-12b-it', use_fast=False, trust_remote_code = True)
@@ -69,8 +71,8 @@ def alpaca_process_func(example):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, default='gemma_3_12b_sort_results/gemma_3_12b_bi_res_logits_avg100_mean_bottom_1000.json')
-    parser.add_argument('--output_path', type=str, default='gemma_3_12b_output/gemma_3_12b_bi_res_logits_avg100_mean_bottom_1000')
+    parser.add_argument('--data_path', type=str, default='/mnt/petrelfs/luzhenghao/safe_useful/llama_score_results/dolly_llama_score_top_1000.json')
+    parser.add_argument('--output_path', type=str, default='/mnt/petrelfs/luzhenghao/safe_useful/gemma_3_12b/dolly_llama_score_top_1000')
     args = parser.parse_args()
     train_json_path = args.data_path
     train_ds = Dataset.from_json(train_json_path)
@@ -96,8 +98,8 @@ if __name__ == '__main__':
     os.environ["WANDB_PROJECT"]="Gemma"
     args = TrainingArguments(
         output_dir=args.output_path,
-        per_device_train_batch_size=8,
-        gradient_accumulation_steps=2,
+        per_device_train_batch_size=4,
+        gradient_accumulation_steps=4,
         logging_steps=1,
         num_train_epochs=3,
         save_steps=50,

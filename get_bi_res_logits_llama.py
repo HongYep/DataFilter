@@ -6,7 +6,7 @@ import random
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 
-res_logits_str = 'llama_bi_res_logits_avg100'
+res_logits_str = 'llama_bi_res_logits_avg100_dolly'
 model_id = '/mnt/petrelfs/share_data/safety_verifier/models/Llama-3.1-8B-Instruct'
 dir_id = 'llama_sort_results'
 
@@ -25,7 +25,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_id)
 # except Exception as e:
 #     pass
 
-with open('data/alpaca-cleaned/alpaca_data_cleaned.json','r') as f:
+with open('data/dolly-clean.json','r') as f:
     data = []
     target_data = json.load(f)
     

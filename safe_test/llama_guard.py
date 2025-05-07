@@ -5,7 +5,7 @@ import time
 import numpy as np
 from tqdm import tqdm
 LLAMA_GUARD_API_KEY = "token-pjlab"
-LLAMA_GUARD_URL = "http://10.140.54.15:8613/v1"
+LLAMA_GUARD_URL = "http://10.140.54.12:8612/v1"
 from concurrent.futures import ThreadPoolExecutor
 import threading
 def llama_guard_eval(query, res):
@@ -21,7 +21,8 @@ def llama_guard_eval(query, res):
             response = llama_guard_client.chat.completions.create(
                 model = "/mnt/petrelfs/share_data/safety_verifier/Llama-Guard-3-8B",
                 messages=messages,
-                max_tokens=10
+                max_tokens=10,
+                # temperature=0.0,
             )
             return response.choices[0].message.content.split('\n')[2]
         except Exception as e:
@@ -44,7 +45,7 @@ for root, dirs, files in os.walk('/mnt/petrelfs/luzhenghao/safe_useful/safe_test
     # with open('/mnt/petrelfs/lihao1/vlmmoe/safe_test/MM-processed_questions/total.json','r') as f:
     #     total = json.load(f)
     for file in files:
-        if 'llama' not in file:
+        if 'matamath' not in file:
             continue
         file = os.path.join(root, file)
         with open(file, 'r') as f:

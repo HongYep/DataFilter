@@ -12,9 +12,9 @@ import json
 import os
 import argparse
 
-model = AutoModelForCausalLM.from_pretrained('/mnt/petrelfs/lihao1/trustai/share/models/meta-llama/Llama-3.1-8B-Instruct', device_map="auto")
+model = AutoModelForCausalLM.from_pretrained('/mnt/petrelfs/share_data/safety_verifier/models/Llama-3.1-8B-Instruct', device_map="auto")
 model.enable_input_require_grads()  # 开启梯度检查点
-tokenizer = AutoTokenizer.from_pretrained('/mnt/petrelfs/lihao1/trustai/share/models/meta-llama/Llama-3.1-8B-Instruct', use_fast=False)
+tokenizer = AutoTokenizer.from_pretrained('/mnt/petrelfs/share_data/safety_verifier/models/Llama-3.1-8B-Instruct', use_fast=False)
 tokenizer.pad_token = tokenizer.eos_token
 
 # import debugpy
@@ -55,8 +55,8 @@ def alpaca_process_func(example):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, default='llama_sort_results/llama_bi_res_logits_avg100_mean_bottom_1000.json')
-    parser.add_argument('--output_path', type=str, default='llama_output/llama_bi_res_logits_avg100_mean_bottom_1000')
+    parser.add_argument('--data_path', type=str, default='wild_score_results/dolly_clean_wild_score_top_1000.json')
+    parser.add_argument('--output_path', type=str, default='llama_output/dolly_clean_wild_score_top_1000')
     args = parser.parse_args()
     train_json_path = args.data_path
     train_ds = Dataset.from_json(train_json_path)

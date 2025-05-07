@@ -1,0 +1,8 @@
+sbatch bi_grads_bottom_1000_train_gemma_3_4b.sh
+sbatch bi_grads_top_1000_train_gemma_3_4b.sh
+sbatch bi_grads_bottom_1000_train_llama.sh
+sbatch bi_grads_top_1000_train_llama.sh
+sbatch bi_grads_bottom_1000_train_qwen7b.sh
+sbatch bi_grads_top_1000_train_qwen7b.sh
+sbatch bi_grads_bottom_1000_train_qwen14b.sh
+sbatch bi_grads_top_1000_train_qwen14b.sh

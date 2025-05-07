@@ -55,8 +55,8 @@ def alpaca_process_func(example):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', type=str, default='qwen_2_5_14B_sort_results/qwen_2_5_14B_bi_res_logits_avg100_mean_bottom_1000.json')
-    parser.add_argument('--output_path', type=str, default='qwen_2_5_14B_output/qwen_2_5_14B_bi_res_logits_avg100_mean_bottom_1000')
+    parser.add_argument('--data_path', type=str, default='qwen_2_5_14B_sort_results/qwen_2_5_14B_bi_res_rep_avg100_mean_bottom_1000.json')
+    parser.add_argument('--output_path', type=str, default='qwen_2_5_14B_output/qwen_2_5_14B_bi_res_rep_avg100_mean_bottom_1000')
     args = parser.parse_args()
     train_json_path = args.data_path
     train_ds = Dataset.from_json(train_json_path)

@@ -39,7 +39,7 @@ def alpaca_process_func(example):
             {"role": "user", "content": f"{example['instruction']}\n{example['input']}"},
         ]
     insturction = tokenizer.apply_chat_template(message, add_generation_prompt=True, return_dict=True)
-    response = tokenizer(f"{example['output']}<|eot_id|>", add_special_tokens=False)
+    response = tokenizer(f"{example['output']}<|im_end|>", add_special_tokens=False)
     input_ids = insturction['input_ids'] + response['input_ids'] + [tokenizer.pad_token_id]
     attention_mask = insturction['attention_mask'] + response['attention_mask'] + [1]
     labels = [-100] * len(insturction['input_ids']) + response['input_ids'] + [tokenizer.pad_token_id]

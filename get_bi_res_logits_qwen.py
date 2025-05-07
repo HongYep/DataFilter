@@ -11,7 +11,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument('--model_size', type=str, default='7B')
 args = parser.parse_args()
 
-res_logits_str = f"qwen_2_5_{args.model_size}_bi_res_logits_avg100"
+res_logits_str = f"qwen_2_5_{args.model_size}_bi_res_logits_avg100_dolly"
 model_id = f'/mnt/petrelfs/share_data/safety_verifier/models/Qwen2.5-{args.model_size}-Instruct'
 dir_id = f'qwen_2_5_{args.model_size}_sort_results'
 
@@ -30,7 +30,7 @@ tokenizer = AutoTokenizer.from_pretrained(model_id)
 # except Exception as e:
 #     pass
 
-with open('data/alpaca-cleaned/alpaca_data_cleaned.json','r') as f:
+with open('data/dolly-clean.json','r') as f:
     data = []
     target_data = json.load(f)
     

@@ -12,6 +12,8 @@ import json
 import os
 import argparse
 
+os.environ["PYTORCH_CUDA_ALLOC_CONF"] = "expandable_segments:True"
+
 model = Gemma3ForCausalLM.from_pretrained('/mnt/petrelfs/share_data/safety_verifier/models/gemma-3-4b-it', device_map="auto", trust_remote_code = True)
 model.enable_input_require_grads()  # 开启梯度检查点
 tokenizer = AutoTokenizer.from_pretrained('/mnt/petrelfs/share_data/safety_verifier/models/gemma-3-4b-it', use_fast=False, trust_remote_code = True)

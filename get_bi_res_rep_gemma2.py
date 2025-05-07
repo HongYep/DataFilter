@@ -5,10 +5,13 @@ from tqdm import tqdm
 import random
 import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
-
-res_logits_str = 'llama_bi_res_rep_avg100'
-model_id = '/mnt/petrelfs/share_data/safety_verifier/models/Llama-3.1-8B-Instruct'
-dir_id = 'llama_sort_results'
+layer_num_start = 22
+layer_num_end = 23
+file_name = 'MetaMathQA_10000'
+res_logits_str = f'gemma_2_9b_{layer_num_start}2{layer_num_end}_{file_name}_avg100'
+# res_logits_str = f'gemma_2_9b_bi_res_24_{file_name}_avg100'
+model_id = '/mnt/petrelfs/share_data/ai4good_shared/models/google/gemma-2-9b-it'
+dir_id = 'gemma_2_9b_sort_results'
 
 model = AutoModelForCausalLM.from_pretrained(model_id,
                                              torch_dtype=torch.bfloat16,
@@ -25,31 +28,31 @@ tokenizer = AutoTokenizer.from_pretrained(model_id)
 # except Exception as e:
 #     pass
 
-with open('data/alpaca-cleaned/alpaca_data_cleaned.json','r') as f:
+with open(f'data/MetaMathQA_10000.json','r') as f:
     data = []
     target_data = json.load(f)
     
-with open('data/pure_bad_dataset/pure-bad-100.jsonl', 'r') as f:
+with open('data/pure-bad-100.jsonl', 'r') as f:
     data = []
     for line in f:
         data.append(json.loads(line))
     unsafe_data = data
 
-with open('data/pure_bad_dataset/pure-bad-100-anchor1.jsonl', 'r') as f:
+with open('data/pure-bad-100-anchor1.jsonl', 'r') as f:
     safe_data = []
     for line in f:
         safe_data.append(json.loads(line))
 
 def alpaca_data_process(data, is_alpaca = True):
     if is_alpaca:
-        if data['input'] == '':
+        if 'input' in data.keys() and data['input'] != '':
             message = [
-                {"role": "user", "content": f"{data['instruction']}"},
+                {"role": "user", "content": f"{data['instruction']}\n{data['input']}"},
                 {"role": "assistant", "content": data['output']},
             ]
         else:
             message = [
-                {"role": "user", "content": f"{data['instruction']}\n{data['input']}"},
+                {"role": "user", "content": f"{data['instruction']}"},
                 {"role": "assistant", "content": data['output']},
             ]
     else:
@@ -69,16 +72,24 @@ def alpaca_data_process(data, is_alpaca = True):
             message,
             return_tensors="pt"
         ).to(model.device)
-        rep = model(input_ids).hidden_states[-1][0][-1].cpu()
+        if layer_num_end - layer_num_start == 1:
+            rep = model(input_ids).hidden_states[layer_num_start][0][-1].detach().cpu()
+        else:
+            rep = torch.stack(model(input_ids).hidden_states[layer_num_start:layer_num_end]).squeeze()[:,-1,:].flatten().detach().cpu()
     return rep
 
-def safety_dat_process(data):
+def safety_data_process(data):
     with torch.inference_mode():
         input_ids = tokenizer.apply_chat_template(
             data['messages'],
             return_tensors="pt"
         ).to(model.device)
-        rep = model(input_ids).hidden_states[-1][0][-1].cpu()
+        print(len(model(input_ids).hidden_states))
+        print(model(input_ids).hidden_states[0].shape)
+        if layer_num_end - layer_num_start == 1:
+            rep = model(input_ids).hidden_states[layer_num_start][0][-1].detach().cpu()
+        else:
+            rep = torch.stack(model(input_ids).hidden_states[layer_num_start:layer_num_end]).squeeze()[:,-1,:].flatten().detach().cpu()
     return rep
 
 def top_cosine_similarity(A, B, C, avg_n = 100):
@@ -94,11 +105,11 @@ def top_cosine_similarity(A, B, C, avg_n = 100):
     return rankings, scores[rankings]
     
 
-unsafe_rep = torch.stack([safety_dat_process(data) for data in tqdm(unsafe_data, desc = 'unsafe_datas')])
+unsafe_rep = torch.stack([safety_data_process(data) for data in tqdm(unsafe_data, desc = 'unsafe_datas')])
 
-safe_rep = torch.stack([safety_dat_process(data) for data in tqdm(safe_data, desc = 'safe_datas')])
+safe_rep = torch.stack([safety_data_process(data) for data in tqdm(safe_data, desc = 'safe_datas')])
 
-target_rep = torch.stack([alpaca_data_process(data) for data in tqdm(target_data , desc='target_datas')])
+target_rep = torch.stack([alpaca_data_process(data) for data in tqdm(target_data , desc=f'target_datas:{file_name}')])
 
 
 select_n = 1000
@@ -111,6 +122,12 @@ for i,s in zip(indices, scores):
 
 with open(f"{dir_id}/{res_logits_str}_mean.json",'w') as file:
     json.dump(values, file, indent=4)
+
+sorted_by_score = sorted(values, key=lambda x: x['sim_score'], reverse=True)
+remove_top_2000 = sorted_by_score[2000:] 
+
+with open(f"{dir_id}/{res_logits_str}_remove_top_2000.json", 'w') as file:
+    json.dump(remove_top_2000, file, indent=4)  
 
 top_indices = indices[:select_n]
 top_scores = scores[:select_n]
