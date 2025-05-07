@@ -1,5 +1,6 @@
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
+from peft import  LoraConfig, TaskType, get_peft_model
 import json
 import os
 import random
@@ -8,10 +9,28 @@ from tqdm import tqdm
 from glob import glob
 from torch.amp import autocast
 import copy
+from trak.projectors import BasicProjector, CudaProjector, ProjectionType
 model_id = '/mnt/petrelfs/lihao1/trustai/share/models/meta-llama/Llama-3.1-8B-Instruct'
 model = AutoModelForCausalLM.from_pretrained(model_id,
                                              torch_dtype=torch.float16,
                                              device_map="auto")
+tokenizer = AutoTokenizer.from_pretrained(model_id)
+
+config = LoraConfig(
+        task_type=TaskType.CAUSAL_LM,
+        target_modules=[
+            "q_proj",
+            "k_proj",
+            "v_proj",
+            "o_proj",
+            "gate_proj",
+            "up_proj",
+            "down_proj"
+        ],
+        r=8,  # Lora 秩
+    )
+model = get_peft_model(model, config)
+
 safe_tensor = None
 unsafe_tensor = None
 
@@ -23,7 +42,29 @@ unsafe_tensor = None
 # except Exception as e:
 #     pass
 
-tokenizer = AutoTokenizer.from_pretrained(model_id)
+def get_trak_projector(device=torch.device("cuda:0")):
+    try:
+        num_sms = torch.cuda.get_device_properties(device.index).multi_processor_count
+        # test run to catch at init time if projection goes through
+        import fast_jl
+        # test run to catch at init time if projection goes through
+        fast_jl.project_rademacher_8(
+            torch.zeros(8, 1_000, device="cuda"), 512, 0, num_sms
+        )
+        projector = CudaProjector
+        print("Using CudaProjector")
+    except Exception as e:
+        projector = BasicProjector
+        print("Using BasicProjector",e)
+    return projector
+
+def check_before_run(model):
+    params_requires_grad = sum([p.requires_grad for n, p in model.named_parameters()])
+    num_params_requires_grad = sum([p.numel() for p in model.parameters() if p.requires_grad])
+    print(f"params_requires_grad={params_requires_grad}")
+    return num_params_requires_grad
+
+
 def obtain_gradients(model, batch):
     model.zero_grad()
     loss = model(**batch).loss
@@ -38,14 +79,26 @@ def obtain_gradients(model, batch):
 def data_preprocess(data, data_type = 'alpaca'):
     if data_type == 'alpaca':
         if data['input'] == '':
+            # prompt_message = [
+            #     {"role": "system", "content": "Below is an instruction that describes a task. Write a response that appropriately completes the request."},
+            #     {"role": "user", "content": f"### Instruction:\n{data['instruction']}\n\n### Response:\n"},
+            # ]
             prompt_message = [
-                {"role": "system", "content": "Below is an instruction that describes a task. Write a response that appropriately completes the request."},
-                {"role": "user", "content": f"### Instruction:\n{data['instruction']}\n\n### Response:\n"},
+                {
+                    "role":"user",
+                    "content":f"{data['instruction']}"
+                }
             ]
         else:
+            # prompt_message = [
+            #     {"role": "system", "content": "Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request."},
+            #     {"role": "user", "content": f"### Instruction:\n{data['instruction']}\n\n### Input:\n{data['input']}\n\n### Response:\n"},
+            # ]
             prompt_message = [
-                {"role": "system", "content": "Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request."},
-                {"role": "user", "content": f"### Instruction:\n{data['instruction']}\n\n### Input:\n{data['input']}\n\n### Response:\n"},
+                {
+                    "role":"user",
+                    "content":f"{data['instruction']}\n{data['input']}"
+                }
             ]
         example_message = prompt_message + [{"role": "assistant", "content": data['output']}]
     elif data_type == 'gsm8k':
@@ -89,7 +142,29 @@ def collect_full_grads(batch, max_response_length = -1):
     print("vectorized_grads", vectorized_grads.sum())
     return vectorized_grads
 
-def calculate_mean(batch_list, grad_dir, max_response_length = -1, normalize = False):
+def collect_grads(batch, max_response_length = -1, proj_dim=8192):
+    prepare_batch(batch, model.device)
+    if max_response_length > 0:
+        labels= batch['labels']
+        pos = torch.where(labels[0] >= 0)[0][0]
+        labels[0][pos + max_response_length:] = -100
+        batch["labels"] = labels
+    projector = get_trak_projector()
+    num_params_requires_grad = check_before_run(model)
+    current_grads = obtain_gradients(model, batch).unsqueeze(0)
+    proj = projector(grad_dim=num_params_requires_grad, 
+                        proj_dim=proj_dim,
+                        seed=42,
+                        proj_type=ProjectionType.rademacher,
+                        device=current_grads.device,
+                        dtype=current_grads.dtype,
+                        max_batch_size=8)
+    print("shape of current_grads:", (current_grads.shape))
+    projected_grads = proj.project(current_grads, model_id=0).cpu()
+    return projected_grads.squeeze()
+
+
+def calculate_mean(batch_list, grad_dir, max_response_length = -1, normalize = True):
     sum_vector = None
     count = 0
     for batch in batch_list:
@@ -99,7 +174,8 @@ def calculate_mean(batch_list, grad_dir, max_response_length = -1, normalize = F
             pos = torch.where(labels[0] >= 0)[0][0]
             labels[0][pos + max_response_length:] = -100
             batch["labels"] = labels
-        vectorized_grads = obtain_gradients(model, batch)
+        # vectorized_grads = obtain_gradients(model, batch)
+        vectorized_grads = collect_grads(batch, max_response_length=max_response_length)
         print("vectorized_grads", vectorized_grads.sum())
         if normalize:
             vectorized_grads = torch.nn.functional.normalize(vectorized_grads, dim=0)
@@ -144,26 +220,32 @@ def rank(vectorized_grads):
     return safe_sim , unsafe_sim
 
 if __name__ == '__main__':
-    # # anchor grads generation
-    # with open('data/pure_bad_dataset/pure-bad-hate-speech-selected-10-original.jsonl','r') as f:
-    #     data = []
-    #     for line in f:
-    #         data.append(json.loads(line))
-    #     safe_data = data
-    # safe_data_bench = [data_preprocess(data, 'unsafe') for data in tqdm(safe_data, desc = 'data preprocessing ...') ]
-    # calculate_mean(safe_data_bench, 'llama_unsafe_hate_speech', max_response_length=10)
-    with open('data/alpaca-gpt4-clean.json','r') as f:
+    # anchor grads generation
+    with open('data/pure-bad-100-anchor1.jsonl','r') as f:
+        safe_data = []
+        for line in f:
+            safe_data.append(json.loads(line))
+    safe_data_bench = [data_preprocess(data, 'unsafe') for data in tqdm(safe_data, desc = 'data preprocessing ...') ]
+    calculate_mean(safe_data_bench, 'llama_pure_bad_100_anchor1', max_response_length=10)
+    with open('data/pure-bad-100.jsonl','r') as f:
+        safe_data = []
+        for line in f:
+            safe_data.append(json.loads(line))
+    safe_data_bench = [data_preprocess(data, 'unsafe') for data in tqdm(safe_data, desc = 'data preprocessing ...') ]
+    calculate_mean(safe_data_bench, 'llama_pure_bad_100', max_response_length=10)
+    with open('data/alpaca_data_cleaned.json','r') as f:
         safe_data = json.load(f)
-    safe_tensor = torch.load('llama_safe_hate_speech_anchor1/grads-mean.pt', weights_only=True).to('cuda:1')
-    unsafe_tensor = torch.load('llama_unsafe_hate_speech/grads-mean.pt', weights_only=True).to('cuda:2')
+    safe_tensor = torch.load('llama_pure_bad_100/grads-mean.pt', weights_only=True).to('cuda:1')
+    unsafe_tensor = torch.load('llama_pure_bad_100_anchor1/grads-mean.pt', weights_only=True).to('cuda:2')
     safe_total_batch = [data_preprocess(data) for data in tqdm(safe_data, desc = 'data preprocessing ...')]
     for i in tqdm(range(0, len(safe_total_batch)), desc='getting gradient ...'):
         safe_item = safe_total_batch[i]
-        vectorized_grads = collect_full_grads(safe_item, max_response_length=10)
+        # vectorized_grads = collect_full_grads(safe_item, max_response_length=10)
+        vectorized_grads = collect_grads(safe_item, max_response_length=10)
         safe_sim, unsafe_sim = rank(vectorized_grads)
         safe_data[i]['safe_sim'] = safe_sim
         safe_data[i]['unsafe_sim'] = unsafe_sim
         gc.collect()
         torch.cuda.empty_cache()
-    with open(f'llama_sort_results/grads/clean-grads.json','w') as f:
+    with open(f'llama_sort_results/grads/alpaca-format-grads.json','w') as f:
         json.dump(safe_data, f, indent = 4)
